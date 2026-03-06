@@ -24,54 +24,7 @@ DEFAULT_HEADERS = {
 }
 
 
-def deep_get(data: dict[str, Any], path: tuple[str, ...], default: Any = "") -> Any:
-    current: Any = data
-    for key in path:
-        if not isinstance(current, dict):
-            return default
-        current = current.get(key)
-    return default if current is None else current
 
-
-def first_non_empty(*values: Any) -> str:
-    for value in values:
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-    return ""
-
-
-def parse_hot_items(payload: dict[str, Any]) -> list[dict[str, Any]]:
-    result: list[dict[str, Any]] = []
-
-    for idx, item in enumerate(payload.get("data", []), start=1):
-        target = item.get("target", {})
-
-        title = first_non_empty(
-            deep_get(target, ("title",)),
-            deep_get(target, ("title_area", "text")),
-            deep_get(item, ("target", "title_area", "text")),
-            deep_get(item, ("card_title",)),
-            deep_get(item, ("title",)),
-        )
-        excerpt = first_non_empty(
-            deep_get(target, ("excerpt",)),
-            deep_get(target, ("excerpt_area", "text")),
-            deep_get(item, ("excerpt",)),
-        )
-
-        question_id = deep_get(target, ("id",), None)
-        url = (
-            f"https://www.zhihu.com/question/{question_id}"
-            if question_id
-            else first_non_empty(
-                deep_get(target, ("url",)),
-                deep_get(item, ("target", "link", "url")),
-                deep_get(item, ("url",)),
-            )
-        )
-
-        metrics_area = item.get("detail_text") or item.get("metrics_area", {})
-        heat = metrics_area if isinstance(metrics_area, str) else deep_get(metrics_area, ("text",), "")
 
         result.append(
             {
@@ -86,15 +39,6 @@ def parse_hot_items(payload: dict[str, Any]) -> list[dict[str, Any]]:
     return result
 
 
-def fetch_hot_list(limit: int = 50, timeout: int = 10) -> list[dict[str, Any]]:
-    params = urlencode({"limit": limit, "desktop": "true"})
-    request = Request(f"{API_URL}?{params}", headers=DEFAULT_HEADERS)
-
-    with urlopen(request, timeout=timeout) as response:
-        payload = json.loads(response.read().decode("utf-8"))
-
-    return parse_hot_items(payload)
-
 
 def save_output(data: list[dict[str, Any]], output_path: Path) -> None:
     output_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -102,8 +46,7 @@ def save_output(data: list[dict[str, Any]], output_path: Path) -> None:
 
 def print_table(data: list[dict[str, Any]]) -> None:
     for item in data:
-        title = item["title"] or "[无标题]"
-        print(f"{item['rank']:>2}. {title}")
+
         if item["heat"]:
             print(f"    热度: {item['heat']}")
         if item["url"]:
