@@ -19,7 +19,4 @@ python zhihu_hot.py --limit 50 --output zhihu_hot.json
 ### 输出字段
 
 - `rank`: 排名
-- `title`: 标题
-- `excerpt`: 摘要
-- `url`: 问题链接
-- `heat`: 热度文案
+

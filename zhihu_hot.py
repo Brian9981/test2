@@ -24,27 +24,7 @@ DEFAULT_HEADERS = {
 }
 
 
-def fetch_hot_list(limit: int = 50, timeout: int = 10) -> list[dict[str, Any]]:
-    params = urlencode({"limit": limit, "desktop": "true"})
-    request = Request(f"{API_URL}?{params}", headers=DEFAULT_HEADERS)
 
-    with urlopen(request, timeout=timeout) as response:
-        payload = json.loads(response.read().decode("utf-8"))
-
-    result: list[dict[str, Any]] = []
-    for idx, item in enumerate(payload.get("data", []), start=1):
-        target = item.get("target", {})
-        title = target.get("title") or item.get("card_title") or ""
-        excerpt = target.get("excerpt") or ""
-        question_id = target.get("id")
-        url = (
-            f"https://www.zhihu.com/question/{question_id}"
-            if question_id
-            else target.get("url")
-        )
-
-        metrics_area = item.get("detail_text") or item.get("metrics_area", {})
-        heat = metrics_area if isinstance(metrics_area, str) else metrics_area.get("text", "")
 
         result.append(
             {
@@ -59,13 +39,14 @@ def fetch_hot_list(limit: int = 50, timeout: int = 10) -> list[dict[str, Any]]:
     return result
 
 
+
 def save_output(data: list[dict[str, Any]], output_path: Path) -> None:
     output_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def print_table(data: list[dict[str, Any]]) -> None:
     for item in data:
-        print(f"{item['rank']:>2}. {item['title']}")
+
         if item["heat"]:
             print(f"    热度: {item['heat']}")
         if item["url"]:
